@@ -753,6 +753,77 @@ noalloc:
 		else
 			new_size += PAGE_CACHE_SIZE;
 	}
+	return 0;
+}
+
+static int __clone_blkaddrs(struct inode *src_inode, struct inode *dst_inode,
+			block_t *blkaddr, int *do_replace,
+			pgoff_t src, pgoff_t dst, pgoff_t len, bool full)
+{
+	struct f2fs_sb_info *sbi = F2FS_I_SB(src_inode);
+	pgoff_t i = 0;
+	int ret;
+
+	while (i < len) {
+		if (blkaddr[i] == NULL_ADDR && !full) {
+			i++;
+			continue;
+		}
+
+		if (do_replace[i] || blkaddr[i] == NULL_ADDR) {
+			struct dnode_of_data dn;
+			struct node_info ni;
+			size_t new_size;
+			pgoff_t ilen;
+
+			set_new_dnode(&dn, dst_inode, NULL, NULL, 0);
+			ret = get_dnode_of_data(&dn, dst + i, ALLOC_NODE);
+			if (ret)
+				return ret;
+
+			get_node_info(sbi, dn.nid, &ni);
+			ilen = min((pgoff_t)
+				ADDRS_PER_PAGE(dn.node_page, dst_inode) -
+						dn.ofs_in_node, len - i);
+			do {
+				dn.data_blkaddr = datablock_addr(dn.node_page,
+								dn.ofs_in_node);
+				truncate_data_blocks_range(&dn, 1);
+
+				if (do_replace[i]) {
+					f2fs_i_blocks_write(src_inode,
+								1, false);
+					f2fs_i_blocks_write(dst_inode,
+								1, true);
+					f2fs_replace_block(sbi, &dn, dn.data_blkaddr,
+					blkaddr[i], ni.version, true, false);
+
+					do_replace[i] = 0;
+				}
+				dn.ofs_in_node++;
+				i++;
+				new_size = (dst + i) << PAGE_SHIFT;
+				if (dst_inode->i_size < new_size)
+					f2fs_i_size_write(dst_inode, new_size);
+			} while (--ilen && (do_replace[i] || blkaddr[i] == NULL_ADDR));
+
+			f2fs_put_dnode(&dn);
+		} else {
+			struct page *psrc, *pdst;
+
+			psrc = get_lock_data_page(src_inode, src + i, true);
+			if (IS_ERR(psrc))
+				return PTR_ERR(psrc);
+			pdst = get_new_data_page(dst_inode, NULL, dst + i,
+								true);
+			if (IS_ERR(pdst)) {
+				f2fs_put_page(psrc, 1);
+				return PTR_ERR(pdst);
+			}
+			f2fs_copy_page(psrc, pdst);
+			set_page_dirty(pdst);
+			f2fs_put_page(pdst, 1);
+			f2fs_put_page(psrc, 1);
 
 	if (!(mode & FALLOC_FL_KEEP_SIZE) &&
 		i_size_read(inode) < new_size) {
