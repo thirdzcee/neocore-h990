@@ -52,8 +52,8 @@ int ip6_find_1stfragopt(struct sk_buff *skb, u8 **nexthdr)
 	int found_rhdr = 0;
 	*nexthdr = &ipv6_hdr(skb)->nexthdr;
 
-	while (offset + 1 <= packet_len) {
-		unsigned int len;
+	while (offset <= packet_len) {
+		struct ipv6_opt_hdr *exthdr;
 
 		switch (**nexthdr) {
 
@@ -74,10 +74,13 @@ int ip6_find_1stfragopt(struct sk_buff *skb, u8 **nexthdr)
 			return offset;
 		}
 
-		len = ipv6_optlen(exthdr);
-		if (len + offset >= IPV6_MAXPLEN)
+		if (offset + sizeof(struct ipv6_opt_hdr) > packet_len)
 			return -EINVAL;
-		offset += len;
+
+		exthdr = (struct ipv6_opt_hdr *)(skb_network_header(skb) +
+						 offset);
+		offset += ipv6_optlen(exthdr);
+		if (offset > IPV6_MAXPLEN)
 		*nexthdr = &exthdr->nexthdr;
 		exthdr = (struct ipv6_opt_hdr *)(skb_network_header(skb) +
 						 offset);
