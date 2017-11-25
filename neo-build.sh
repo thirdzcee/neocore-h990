@@ -9,7 +9,7 @@ DIR=$(pwd)
 BUILD="$DIR/build"
 OUT="$DIR/zip"
 DATE=`date '+%Y-%m-%d--%H-%M-%S'`;
-ZIPNAME="neocore-$DATE.zip"
+ZIPNAME="lineage-neocore-$DATE.zip"
 NPR=`expr $(nproc) + 1`
 
 echo "cleaning build..."
@@ -33,16 +33,16 @@ make O="$BUILD" INSTALL_MOD_PATH="." INSTALL_MOD_STRIP=1 modules_install
 rm $BUILD/lib/modules/*/build
 rm $BUILD/lib/modules/*/source
 
-mkdir -p $OUT/modules
-mv "$BUILD/arch/arm64/boot/Image.gz-dtb" "$OUT/Image.gz-dtb"
-find "$BUILD/lib/modules/" -name *.ko | xargs -n 1 -I '{}' mv {} "$OUT/modules"
-cd zip
+#mkdir -p $OUT/modules
+#mv "$BUILD/arch/arm64/boot/Image.gz-dtb" "$OUT/Image.gz-dtb"
+#find "$BUILD/lib/modules/" -name *.ko | xargs -n 1 -I '{}' mv {} "$OUT/modules"
+#cd zip
 #mv modules/exfat.ko modules/texfat.ko
-zip -q -r "$ZIPNAME" anykernel.sh META-INF tools modules Image.gz-dtb setfiles.conf ramdisk patch
+#zip -q -r "$ZIPNAME" anykernel.sh META-INF tools modules Image.gz-dtb setfiles.conf ramdisk patch
 
 mv "$ZIPNAME" "/home/ironbuang/android/h990/$ZIPNAME"
 
-rm -rf "$OUT/modules"
+#rm -rf "$OUT/modules"
 rm -rf "$OUT/Image.gz-dtb"
 
 echo "Done !"
