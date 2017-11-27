@@ -104,4 +104,4 @@ tools/gator/daemon/events.xml
 tools/gator/daemon/events_xml.h
 
 /build
-/out
+/outnet/wireguard/
