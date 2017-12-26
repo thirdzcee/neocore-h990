@@ -3,7 +3,8 @@
 
 ## AnyKernel setup
 # begin properties
-kernel.string=H990 Neocore by thirdzcee @ xda-developers
+properties() {
+kernel.string=NeOcOrE Kernel by thirdzcee @ xda
 do.devicecheck=1
 do.modules=1
 do.cleanup=1
@@ -25,14 +26,13 @@ ramdisk_compression=auto;
 # import patching functions/variables - see for reference
 . /tmp/anykernel/tools/ak2-core.sh;
 
-
-## AnyKernel file attributes
-# set permissions/ownership for included ramdisk files
-chmod -R 755 $ramdisk
-chmod 750 $ramdisk/init.lge.rc
-
 ## AnyKernel install
 dump_boot;
+
+# init.lge.rc
+# Disable LGE Root Checker Tool
+replace_file init.lge.rc "0750" "init.lge.rc";
+replace_file init.elsa.power.rc "0750" "init.elsa.power.rc";
 
 write_boot;
 
