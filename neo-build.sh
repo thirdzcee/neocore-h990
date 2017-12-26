@@ -1,11 +1,15 @@
 export KBUILD_BUILD_USER=thirdzcee
 export ARCH=arm64
-export CROSS_COMPILE=/home/ironbuang/android/toolchains/aarch64-gcc-linaro-7.1.1-2017.05/bin/aarch64-linux-gnu-
+export USE_CCACHE=1
+export CCACHE_DIR=/home/ironbuang/.ccache
+export PATH="/usr/lib/ccache:$PATH"
+export CROSS_COMPILE=/home/ironbuang/android/toolchains/gcc-prebuilts/bin/aarch64-linaro-linux-android-
 
 DIR=$(pwd)
 BUILD="$DIR/build"
 OUT="$DIR/zip"
-ZIPNAME="neocore.zip"
+DATE=`date '+%Y-%m-%d--%H-%M-%S'`;
+ZIPNAME="neocore-$DATE.zip"
 NPR=`expr $(nproc) + 1`
 
 echo "cleaning build..."
