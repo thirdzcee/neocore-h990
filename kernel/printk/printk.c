@@ -553,6 +553,9 @@ struct devkmsg_user {
 
 static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 {
+#ifdef CONFIG_REJECT_USERSPACE_KMESG
+	return iocb->ki_nbytes;
+#else
 	char *buf, *line;
 	int i;
 	int level = default_message_loglevel;
@@ -599,6 +602,7 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 	printk_emit(facility, level, NULL, 0, "%s", line);
 	kfree(buf);
 	return ret;
+#endif
 }
 
 static ssize_t devkmsg_read(struct file *file, char __user *buf,
