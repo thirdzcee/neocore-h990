@@ -2,6 +2,7 @@
  * Dynamic sync control driver V2
  * 
  * by andip71 (alias Lord Boeffla)
+ * modified by xNombre (Andrzej Perczak)
  * 
  * All credits for original implemenation to faux123
  * 
@@ -15,21 +16,17 @@
 #include <linux/reboot.h>
 #include <linux/writeback.h>
 #include <linux/dyn_sync_cntrl.h>
-#include <linux/lcd_notify.h>
+#include <linux/state_notifier.h>
+#include <linux/fs.h>
 
 // fsync_mutex protects dyn_fsync_active during suspend / late resume transitions
 static DEFINE_MUTEX(fsync_mutex);
 
-
 // Declarations
-
 bool suspend_active __read_mostly = false;
 bool dyn_fsync_active __read_mostly = DYN_FSYNC_ACTIVE_DEFAULT;
 
-static struct notifier_block lcd_notif;
-
-extern void sync_filesystems(int wait);
-
+static struct notifier_block notifier;
 
 // Functions
 
@@ -83,18 +80,11 @@ static ssize_t dyn_fsync_suspend_show(struct kobject *kobj,
 }
 
 
-static void dyn_fsync_force_flush(void)
-{
-	sync_filesystems(0);
-	sync_filesystems(1);
-}
-
-
 static int dyn_fsync_panic_event(struct notifier_block *this,
 		unsigned long event, void *ptr)
 {
 	suspend_active = false;
-	dyn_fsync_force_flush();
+	emergency_sync();
 	pr_warn("dynamic fsync: panic - force flush!\n");
 
 	return NOTIFY_DONE;
@@ -107,31 +97,31 @@ static int dyn_fsync_notify_sys(struct notifier_block *this, unsigned long code,
 	if (code == SYS_DOWN || code == SYS_HALT) 
 	{
 		suspend_active = false;
-		dyn_fsync_force_flush();
+		emergency_sync();
 		pr_warn("dynamic fsync: reboot - force flush!\n");
 	}
 	return NOTIFY_DONE;
 }
 
-static int lcd_notifier_callback(struct notifier_block *this,
+static int state_notifier_callback(struct notifier_block *this,
 								unsigned long event, void *data)
 {
 	switch (event) 
 	{
-		case LCD_EVENT_OFF_START:
+		case STATE_NOTIFIER_ACTIVE:
 			mutex_lock(&fsync_mutex);
 			
 			suspend_active = false;
 
 			if (dyn_fsync_active) 
 			{
-				dyn_fsync_force_flush();
+				sync_filesystems();
 			}
 			
 			mutex_unlock(&fsync_mutex);
 			break;
 			
-		case LCD_EVENT_ON_END:
+		case STATE_NOTIFIER_SUSPEND:
 			mutex_lock(&fsync_mutex);
 			suspend_active = true;
 			mutex_unlock(&fsync_mutex);
@@ -190,68 +180,54 @@ static int dyn_fsync_init(void)
 {
 	int sysfs_result;
 
-	register_reboot_notifier(&dyn_fsync_notifier);
-	
-	atomic_notifier_chain_register(&panic_notifier_list,
-		&dyn_fsync_panic_block);
-
 	dyn_fsync_kobj = kobject_create_and_add("dyn_fsync", kernel_kobj);
-
 	if (!dyn_fsync_kobj) 
 	{
 		pr_err("%s dyn_fsync_kobj create failed!\n", __FUNCTION__);
 		return -ENOMEM;
-    }
-
-	sysfs_result = sysfs_create_group(dyn_fsync_kobj,
-			&dyn_fsync_active_attr_group);
-
-    if (sysfs_result) 
-    {
-		pr_err("%s dyn_fsync sysfs create failed!\n", __FUNCTION__);
-		kobject_put(dyn_fsync_kobj);
 	}
 
-	lcd_notif.notifier_call = lcd_notifier_callback;
-	if (lcd_register_client(&lcd_notif) != 0) 
+	sysfs_result = sysfs_create_group(dyn_fsync_kobj, &dyn_fsync_active_attr_group);
+	if (sysfs_result) 
+	{
+		pr_err("%s dyn_fsync sysfs create failed!\n", __FUNCTION__);
+		goto err;
+	}
+
+	notifier.notifier_call = state_notifier_callback;
+	if (state_register_client(&notifier))
 	{
 		pr_err("%s: Failed to register lcd callback\n", __func__);
-
-		unregister_reboot_notifier(&dyn_fsync_notifier);
-
-		atomic_notifier_chain_unregister(&panic_notifier_list,
-			&dyn_fsync_panic_block);
-
-		if (dyn_fsync_kobj != NULL)
-			kobject_put(dyn_fsync_kobj);
-
-		return -EFAULT;
+		goto err;
 	}
 
-	pr_info("%s dynamic fsync initialisation complete\n", __FUNCTION__);
+	register_reboot_notifier(&dyn_fsync_notifier);
+
+	atomic_notifier_chain_register(&panic_notifier_list,
+		&dyn_fsync_panic_block);
+
+	pr_info("%s dynamic fsync initialisation completed\n", __FUNCTION__);
 
 	return sysfs_result;
+
+err:
+	kobject_put(dyn_fsync_kobj);
+	return -EFAULT;
 }
 
 
 static void dyn_fsync_exit(void)
 {
 	unregister_reboot_notifier(&dyn_fsync_notifier);
+	atomic_notifier_chain_unregister(&panic_notifier_list, &dyn_fsync_panic_block);
+	kobject_put(dyn_fsync_kobj);
+	state_unregister_client(&notifier);
 
-	atomic_notifier_chain_unregister(&panic_notifier_list,
-		&dyn_fsync_panic_block);
-
-	if (dyn_fsync_kobj != NULL)
-		kobject_put(dyn_fsync_kobj);
-	
-	lcd_unregister_client(&lcd_notif);
-		
 	pr_info("%s dynamic fsync unregistration complete\n", __FUNCTION__);
 }
 
 module_init(dyn_fsync_init);
 module_exit(dyn_fsync_exit);
 
-MODULE_AUTHOR("andip71");
-MODULE_DESCRIPTION("dynamic fsync - automatic fs sync optimization for msm8974");
+MODULE_DESCRIPTION("dynamic fsync - automatic fs sync optimizer");
 MODULE_LICENSE("GPL v2");
