@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (C) 2016-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+# Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 #
 
 set -e -o pipefail
@@ -27,18 +27,19 @@ PROGRAM="${0##*/}"
 ARGS=( "$@" )
 
 parse_options() {
-	local interface_section=0 line key value
+	local interface_section=0 line key value stripped
 	CONFIG_FILE="$1"
-	[[ $CONFIG_FILE =~ ^[a-zA-Z0-9_=+.-]{1,16}$ ]] && CONFIG_FILE="/etc/wireguard/$CONFIG_FILE.conf"
+	[[ $CONFIG_FILE =~ ^[a-zA-Z0-9_=+.-]{1,15}$ ]] && CONFIG_FILE="/etc/wireguard/$CONFIG_FILE.conf"
 	[[ -e $CONFIG_FILE ]] || die "\`$CONFIG_FILE' does not exist"
-	[[ $CONFIG_FILE =~ /?([a-zA-Z0-9_=+.-]{1,16})\.conf$ ]] || die "The config file must be a valid interface name, followed by .conf"
+	[[ $CONFIG_FILE =~ (^|/)([a-zA-Z0-9_=+.-]{1,15})\.conf$ ]] || die "The config file must be a valid interface name, followed by .conf"
 	CONFIG_FILE="$(readlink -f "$CONFIG_FILE")"
 	((($(stat -c '0%#a' "$CONFIG_FILE") & $(stat -c '0%#a' "${CONFIG_FILE%/*}") & 0007) == 0)) || echo "Warning: \`$CONFIG_FILE' is world accessible" >&2
-	INTERFACE="${BASH_REMATCH[1]}"
+	INTERFACE="${BASH_REMATCH[2]}"
 	shopt -s nocasematch
 	while read -r line || [[ -n $line ]]; do
-		key="${line%%=*}"; key="${key##*([[:space:]])}"; key="${key%%*([[:space:]])}"
-		value="${line#*=}"; value="${value##*([[:space:]])}"; value="${value%%*([[:space:]])}"
+		stripped="${line%%\#*}"
+		key="${stripped%%=*}"; key="${key##*([[:space:]])}"; key="${key%%*([[:space:]])}"
+		value="${stripped#*=}"; value="${value##*([[:space:]])}"; value="${value%%*([[:space:]])}"
 		[[ $key == "["* ]] && interface_section=0
 		[[ $key == "[Interface]" ]] && interface_section=1
 		if [[ $interface_section -eq 1 ]]; then
@@ -135,16 +136,25 @@ set_mtu() {
 	cmd ip link set mtu $(( mtu - 80 )) dev "$INTERFACE"
 }
 
+resolvconf_iface_prefix() {
+	[[ -f /etc/resolvconf/interface-order ]] || return 0
+	local iface
+	while read -r iface; do
+		[[ $iface =~ ^([A-Za-z0-9-]+)\*$ ]] || continue
+		echo "${BASH_REMATCH[1]}." && return 0
+	done < /etc/resolvconf/interface-order
+}
+
 HAVE_SET_DNS=0
 set_dns() {
 	[[ ${#DNS[@]} -gt 0 ]] || return 0
-	printf 'nameserver %s\n' "${DNS[@]}" | cmd resolvconf -a "tun.$INTERFACE" -m 0 -x
+	printf 'nameserver %s\n' "${DNS[@]}" | cmd resolvconf -a "$(resolvconf_iface_prefix)$INTERFACE" -m 0 -x
 	HAVE_SET_DNS=1
 }
 
 unset_dns() {
 	[[ ${#DNS[@]} -gt 0 ]] || return 0
-	cmd resolvconf -d "tun.$INTERFACE"
+	cmd resolvconf -d "$(resolvconf_iface_prefix)$INTERFACE"
 }
 
 add_route() {
@@ -193,7 +203,7 @@ save_config() {
 	done
 	while read -r address; do
 		[[ $address =~ ^nameserver\ ([a-zA-Z0-9_=+:%.-]+)$ ]] && new_config+="DNS = ${BASH_REMATCH[1]}"$'\n'
-	done < <(resolvconf -l "tun.$INTERFACE" 2>/dev/null)
+	done < <(resolvconf -l "$(resolvconf_iface_prefix)$INTERFACE" 2>/dev/null || cat "/etc/resolvconf/run/interface/$(resolvconf_iface_prefix)$INTERFACE")
 	[[ -n $MTU && $(ip link show dev "$INTERFACE") =~ mtu\ ([0-9]+) ]] && new_config+="MTU = ${BASH_REMATCH[1]}"$'\n'
 	[[ -n $TABLE ]] && new_config+="Table = $TABLE"$'\n'
 	[[ $SAVE_CONFIG -eq 0 ]] || new_config+=$'SaveConfig = true\n'

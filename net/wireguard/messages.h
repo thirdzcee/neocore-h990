@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  * See doc/protocol.md for more info
  */
@@ -60,8 +60,7 @@ enum message_type {
 	MESSAGE_HANDSHAKE_INITIATION = 1,
 	MESSAGE_HANDSHAKE_RESPONSE = 2,
 	MESSAGE_HANDSHAKE_COOKIE = 3,
-	MESSAGE_DATA = 4,
-	MESSAGE_TOTAL = 5
+	MESSAGE_DATA = 4
 };
 
 struct message_header {

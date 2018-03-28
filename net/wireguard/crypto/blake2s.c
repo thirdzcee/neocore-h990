@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  * Original author: Samuel Neves <sneves@dei.uc.pt>
  */
@@ -13,18 +13,21 @@
 #include <linux/bug.h>
 #include <asm/unaligned.h>
 
-typedef struct {
-	u8 digest_length;
-	u8 key_length;
-	u8 fanout;
-	u8 depth;
-	u32 leaf_length;
-	u32 node_offset;
-	u16 xof_length;
-	u8 node_depth;
-	u8 inner_length;
-	u8 salt[8];
-	u8 personal[8];
+typedef union {
+	struct {
+		u8 digest_length;
+		u8 key_length;
+		u8 fanout;
+		u8 depth;
+		u32 leaf_length;
+		u32 node_offset;
+		u16 xof_length;
+		u8 node_depth;
+		u8 inner_length;
+		u8 salt[8];
+		u8 personal[8];
+	};
+	__le32 words[8];
 } __packed blake2s_param;
 
 static const u32 blake2s_iv[8] = {
@@ -65,16 +68,11 @@ static inline void blake2s_increment_counter(struct blake2s_state *state, const 
 
 static inline void blake2s_init_param(struct blake2s_state *state, const blake2s_param *param)
 {
-	const __le32 *p;
 	int i;
 
 	memset(state, 0, sizeof(struct blake2s_state));
 	for (i = 0; i < 8; ++i)
-		state->h[i] = blake2s_iv[i];
-	p = (const __le32 *)param;
-	/* IV XOR ParamBlock */
-	for (i = 0; i < 8; ++i)
-		state->h[i] ^= le32_to_cpu(p[i]);
+		state->h[i] = blake2s_iv[i] ^ le32_to_cpu(param->words[i]);
 }
 
 void blake2s_init(struct blake2s_state *state, const size_t outlen)
@@ -115,8 +113,8 @@ void blake2s_init_key(struct blake2s_state *state, const size_t outlen, const vo
 #include <asm/processor.h>
 #include <asm/fpu/api.h>
 #include <asm/simd.h>
-static bool blake2s_use_avx __read_mostly;
-static bool blake2s_use_avx512 __read_mostly;
+static bool blake2s_use_avx __ro_after_init;
+static bool blake2s_use_avx512 __ro_after_init;
 void __init blake2s_fpu_init(void)
 {
 #ifndef CONFIG_UML

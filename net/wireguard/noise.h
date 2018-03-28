@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  * See doc/protocol.md and https://github.com/trevp/noise/blob/master/noise.md for more info
  */
@@ -54,10 +54,10 @@ struct noise_keypairs {
 };
 
 struct noise_static_identity {
-	bool has_identity;
 	u8 static_public[NOISE_PUBLIC_KEY_LEN];
 	u8 static_private[NOISE_PUBLIC_KEY_LEN];
 	struct rw_semaphore lock;
+	bool has_identity;
 };
 
 enum noise_handshake_state {
@@ -109,7 +109,7 @@ bool noise_precompute_static_static(struct wireguard_peer *peer);
 bool noise_handshake_create_initiation(struct message_handshake_initiation *dst, struct noise_handshake *handshake);
 struct wireguard_peer *noise_handshake_consume_initiation(struct message_handshake_initiation *src, struct wireguard_device *wg);
 
-bool noise_handshake_create_response(struct message_handshake_response *dst, struct noise_handshake *peer);
+bool noise_handshake_create_response(struct message_handshake_response *dst, struct noise_handshake *handshake);
 struct wireguard_peer *noise_handshake_consume_response(struct message_handshake_response *src, struct wireguard_device *wg);
 
 bool noise_handshake_begin_session(struct noise_handshake *handshake, struct noise_keypairs *keypairs);

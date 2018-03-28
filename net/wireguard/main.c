@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "version.h"
@@ -28,7 +28,7 @@ static int __init mod_init(void)
 	blake2s_fpu_init();
 	curve25519_fpu_init();
 #ifdef DEBUG
-	if (!allowedips_selftest() || !packet_counter_selftest() || !curve25519_selftest() || !chacha20poly1305_selftest() || !blake2s_selftest() || !ratelimiter_selftest())
+	if (!allowedips_selftest() || !packet_counter_selftest() || !curve25519_selftest() || !chacha20poly1305_selftest() || !poly1305_selftest() || !blake2s_selftest() || !ratelimiter_selftest())
 		return -ENOTRECOVERABLE;
 #endif
 	noise_init();
@@ -42,7 +42,7 @@ static int __init mod_init(void)
 		goto err_netlink;
 
 	pr_info("WireGuard " WIREGUARD_VERSION " loaded. See www.wireguard.com for information.\n");
-	pr_info("Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.\n");
+	pr_info("Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.\n");
 
 	return 0;
 

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  * This is a specialized constant-time base64/hex implementation that resists side-channel attacks.
  */
@@ -113,7 +113,7 @@ bool key_is_zero(const uint8_t key[static WG_KEY_LEN])
 
 	for (unsigned int i = 0; i < WG_KEY_LEN; ++i) {
 		acc |= key[i];
-		__asm__ ("" : "=r" (acc) : "0" (acc));
+		asm("" : "=r" (acc) : "0" (acc));
 	}
 	return 1 & ((acc - 1) >> 8);
 }

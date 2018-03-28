@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "device.h"
@@ -36,12 +36,13 @@ static inline int send4(struct wireguard_device *wg, struct sk_buff *skb, struct
 
 	rcu_read_lock_bh();
 	sock = rcu_dereference_bh(wg->sock4);
-	fl.fl4_sport = inet_sk(sock)->inet_sport;
 
 	if (unlikely(!sock)) {
 		ret = -ENONET;
 		goto err;
 	}
+
+	fl.fl4_sport = inet_sk(sock)->inet_sport;
 
 	if (cache)
 		rt = dst_cache_get_ip4(cache, &fl.saddr);
@@ -107,12 +108,13 @@ static inline int send6(struct wireguard_device *wg, struct sk_buff *skb, struct
 
 	rcu_read_lock_bh();
 	sock = rcu_dereference_bh(wg->sock6);
-	fl.fl6_sport = inet_sk(sock)->inet_sport;
 
 	if (unlikely(!sock)) {
 		ret = -ENONET;
 		goto err;
 	}
+
+	fl.fl6_sport = inet_sk(sock)->inet_sport;
 
 	if (cache)
 		dst = dst_cache_get_ip6(cache, &fl.saddr);
@@ -161,6 +163,8 @@ int socket_send_skb_to_peer(struct wireguard_peer *peer, struct sk_buff *skb, u8
 		ret = send4(peer->device, skb, &peer->endpoint, ds, &peer->endpoint_cache);
 	else if (peer->endpoint.addr.sa_family == AF_INET6)
 		ret = send6(peer->device, skb, &peer->endpoint, ds, &peer->endpoint_cache);
+	else
+		dev_kfree_skb(skb);
 	if (likely(!ret))
 		peer->tx_bytes += skb_len;
 	read_unlock_bh(&peer->endpoint_lock);

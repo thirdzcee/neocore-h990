@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #ifndef _WG_QUEUEING_H
@@ -63,7 +63,7 @@ static inline __be16 skb_examine_untrusted_ip_hdr(struct sk_buff *skb)
 
 static inline void skb_reset(struct sk_buff *skb)
 {
-	skb_scrub_packet(skb, false);
+	skb_scrub_packet(skb, true);
 	memset(&skb->headers_start, 0, offsetof(struct sk_buff, headers_end) - offsetof(struct sk_buff, headers_start));
 	skb->queue_mapping = 0;
 	skb->nohdr = 0;
