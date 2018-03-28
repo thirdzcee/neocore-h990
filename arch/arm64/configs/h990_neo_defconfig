@@ -4893,3 +4893,5 @@ CONFIG_QMI_ENCDEC=y
 # CONFIG_STRICT_MEMORY_RWX is not set
 #Boeffla wakelock blocker
 CONFIG_BOEFFLA_WL_BLOCKER=y
+#adreno idler
+CONFIG_ADRENO_IDLER=y
