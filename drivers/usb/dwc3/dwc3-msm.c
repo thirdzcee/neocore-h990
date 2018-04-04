@@ -78,16 +78,22 @@ static int firstboot_check = 1;
 #endif
 
 #define DWC3_USB30_CHG_CURRENT 900
-#define DEFAULT_DCP_CHG_MAX    1800
+#define DEFAULT_DCP_CHG_MAX    2500
 
 #ifdef CONFIG_LGE_PM
+#ifdef CONFIG_FORCE_FAST_CHARGE
+#define DWC3_IDEV_CHG_MAX 2500
+#define DWC3_DCP_CHG_MAX 2500
+#define DWC3_SDP_CHG_MAX 900
+#else
 #define DWC3_IDEV_CHG_MAX 1500
 #define DWC3_DCP_CHG_MAX 1800
 #define DWC3_SDP_CHG_MAX 500
+#endif
 #ifdef CONFIG_MACH_MSM8996_H1
 #define DWC3_HVDCP_CHG_MAX 2000
 #else
-#define DWC3_HVDCP_CHG_MAX 1900
+#define DWC3_HVDCP_CHG_MAX 2500
 #endif
 #else
 #define DWC3_IDEV_CHG_MAX 1500
