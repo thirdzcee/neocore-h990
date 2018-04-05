@@ -3,7 +3,8 @@ export ARCH=arm64
 export USE_CCACHE=1
 export CCACHE_DIR=/home/ironbuang/.ccache
 export PATH="/usr/lib/ccache:$PATH"
-export CROSS_COMPILE=/home/ironbuang/android/toolchains/gcc-prebuilts/bin/aarch64-linaro-linux-android-
+export CROSS_COMPILE=/home/ironbuang/android/toolchains/aarch64-linux-android/bin/aarch64-opt-linux-android-
+
 
 DIR=$(pwd)
 BUILD="$DIR/build"
