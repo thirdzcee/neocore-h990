@@ -9,7 +9,7 @@ DIR=$(pwd)
 BUILD="$DIR/build"
 OUT="$DIR/zip"
 DATE=`date '+%Y-%m-%d--%H-%M-%S'`;
-ZIPNAME="neocore-$DATE.zip"
+ZIPNAME="neocore-LOS-$DATE.zip"
 NPR=`expr $(nproc) + 1`
 
 echo "cleaning build..."
@@ -46,5 +46,3 @@ rm -rf "$OUT/modules"
 rm -rf "$OUT/Image.gz-dtb"
 
 echo "Done !"
-
-
