@@ -102,4 +102,6 @@ android/configs/android-*.cfg
 
 #build folder and wireguard
 /build
-/outnet/wireguard/
+/out
+/net/wireguard/
+
