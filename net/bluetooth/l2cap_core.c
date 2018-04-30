@@ -3549,6 +3549,7 @@ static int l2cap_parse_conf_rsp(struct l2cap_chan *chan, void *rsp, int len,
 
 				l2cap_add_conf_opt(&ptr, L2CAP_CONF_EFS, sizeof(efs),
 						   (unsigned long) &efs, endptr - ptr);
+			}
 			break;
 
 		case L2CAP_CONF_FCS:
@@ -7556,3 +7557,4 @@ void l2cap_exit(void)
 
 module_param(disable_ertm, bool, 0644);
 MODULE_PARM_DESC(disable_ertm, "Disable enhanced retransmission mode");
+
