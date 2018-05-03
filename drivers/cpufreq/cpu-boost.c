@@ -337,19 +337,6 @@ static void cpuboost_input_event(struct input_handle *handle,
 	if (!input_boost_enabled)
 		return;
 
-	if (multi_boost_enabled) {
-		now = ktime_to_us(ktime_get());
-		if (now - last_input_time < INPUT_SAMPLING_TIME)
-			return;
-
-		if (work_pending(&input_boost_multi))
-			return;
-
-		queue_work(cpu_boost_wq, &input_boost_multi);
-		last_input_time = ktime_to_us(ktime_get());
-		return;
-	}
-
 	now = ktime_to_us(ktime_get());
 	if ((now - last_input_time) < (input_boost_ms * USEC_PER_MSEC))
 		return;
@@ -448,7 +435,6 @@ static int cpu_boost_init(void)
 
 	init_kthread_work(&input_boost_work, do_input_boost);
 	INIT_DELAYED_WORK(&input_boost_rem, do_input_boost_rem);
-	INIT_WORK(&input_boost_multi, do_input_boost_multi);
 
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
