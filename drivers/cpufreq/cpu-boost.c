@@ -329,72 +329,6 @@ static void do_input_boost(struct kthread_work *work)
 		&input_boost_rem, msecs_to_jiffies(input_boost_ms));
 }
 
-static void do_input_boost_multi(struct work_struct *work)
-{
-	unsigned int i, ret;
-	struct cpu_sync *i_sync_info;
-
-	if (multi_boost_ms == 0) {
-
-		cancel_delayed_work_sync(&input_boost_rem);
-		if (sched_boost_active) {
-			sched_set_boost(0);
-			sched_boost_active = false;
-		}
-
-		/* Set the input_boost_min for all CPUs in the system */
-		for_each_possible_cpu(i) {
-			i_sync_info = &per_cpu(sync_info, i);
-			i_sync_info->input_boost_min = i_sync_info->input_boost_freq;
-		}
-
-		/* Update policies for all online CPUs */
-		update_policy_online();
-
-		/* Enable scheduler boost to migrate tasks to big cluster */
-		if (sched_boost_on_input) {
-			ret = sched_set_boost(1);
-			if (ret)
-				pr_err("cpu-boost: HMP boost enable failed\n");
-			else
-				sched_boost_active = true;
-		}
-
-		queue_delayed_work(cpu_boost_wq, &input_boost_rem,
-						msecs_to_jiffies(input_boost_ms  * 2));
-
-		multi_boost_started = true;
-	}
-	else {
-		if (multi_boost_started == true && multi_boost_ms >= MAX_MULTI_BOOST) {
-			/* lower the input_boost_min for all CPUs in the system */
-			for_each_possible_cpu(i) {
-				i_sync_info = &per_cpu(sync_info, i);
-				i_sync_info->input_boost_min = per_cpu(multi_boost_freq_sync_info, i);
-			}
-
-			/* Update policies for all online CPUs */
-			update_policy_online();
-
-			if (sched_boost_active) {
-				ret = sched_set_boost(0);
-				if (ret)
-					pr_err("cpu-boost: HMP boost disable failed\n");
-				sched_boost_active = false;
-			}
-
-			multi_boost_started = false;
-		}
-
-		mod_delayed_work(cpu_boost_wq, &input_boost_rem,
-						msecs_to_jiffies(input_boost_ms * 2));
-	}
-
-	pr_debug("Setting multi boost #%d for all CPUs\n", multi_boost_ms);
-
-	multi_boost_ms += input_boost_ms;
-}
-
 static void cpuboost_input_event(struct input_handle *handle,
 		unsigned int type, unsigned int code, int value)
 {
@@ -526,3 +460,4 @@ static int cpu_boost_init(void)
 	return ret;
 }
 late_initcall(cpu_boost_init);
+

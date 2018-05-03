@@ -516,21 +516,14 @@ static int enter_state(suspend_state_t state)
 		freeze_begin();
 
 	trace_suspend_resume(TPS("sync_filesystems"), 0, true);
-<<<<<<< HEAD
 #ifdef CONFIG_PM_SUSPEND_BG_SYNC
 	if (bg_sync()) {
 		error = -EBUSY;
 		goto Unlock;
 	}
-	printk("PM: done.\n");
 #else
-	printk(KERN_INFO "PM: Syncing filesystems ... ");
 	sys_sync();
-	printk("done.\n");
 #endif
-=======
-	sys_sync();
->>>>>>> 36dde906ecd1... Squash: log mute
 	trace_suspend_resume(TPS("sync_filesystems"), 0, false);
 
 	pr_debug("PM: Preparing system for %s sleep\n", pm_states[state]);
