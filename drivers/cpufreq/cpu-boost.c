@@ -118,9 +118,6 @@ static DEFINE_PER_CPU(unsigned int, multi_boost_freq_sync_info);
 
 static bool multi_boost_enabled;
 static unsigned int multi_boost_ms = 0;
-static bool multi_boost_started;
-
-static struct work_struct input_boost_multi;
 
 static int set_multi_boost_freq(const char *buf, const struct kernel_param *kp)
 {
