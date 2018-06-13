@@ -54,7 +54,7 @@
 		CPU0: cpu@0 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
-			clock-frequency = <1766400>;
+			clock-frequency = <1824000>;
 			efficiency = <2048>;
 			reg = <0x0 0x0>;
 			qcom,limits-info = <&mitigation_profile0>;
@@ -78,7 +78,7 @@
 		CPU1: cpu@1 {
 			device_type = "cpu";
 			compatible = "qcom,kryo";
-			clock-frequency = <1766400>;
+			clock-frequency = <1824000>;
 			efficiency = <2048>;
 			reg = <0x0 0x1>;
 			qcom,limits-info = <&mitigation_profile1>;
