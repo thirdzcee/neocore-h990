@@ -191,11 +191,7 @@ static void tcp_incr_quickack(struct sock *sk)
 	if (quickacks > icsk->icsk_ack.quick)
 		icsk->icsk_ack.quick = min(quickacks, TCP_MAX_QUICKACKS);
 }
-#ifdef CONFIG_LGP_DATA_TCPIP_MPTCP
 void tcp_enter_quickack_mode(struct sock *sk)
-#else
-static void tcp_enter_quickack_mode(struct sock *sk)
-#endif
 {
 	struct inet_connection_sock *icsk = inet_csk(sk);
 	tcp_incr_quickack(sk);
